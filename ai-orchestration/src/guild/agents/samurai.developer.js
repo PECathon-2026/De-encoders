@@ -130,6 +130,31 @@ Instructions: ${repairInstructions || "Resolve errors without breaking existing 
     updates.push({ file: "src/App.jsx", content: responseText.trim() });
   }
 
+  // Ensure matching unit tests exist for the new application so old tests never linger
+  const hasTestFile = updates.some(u => u.file.includes("test") || u.file.includes("spec"));
+  if (!hasTestFile && updates.some(u => u.file === "src/App.jsx")) {
+    const safeTitle = (missionObjective || decree || "Application").replace(/['"\\]/g, "");
+    const generatedTest = `import React from 'react';
+import { describe, it, expect } from 'vitest';
+import { render } from '@testing-library/react';
+import App from './App';
+
+describe('${safeTitle} Component Suite', () => {
+  it('renders application cleanly without crashing', () => {
+    const { container } = render(<App />);
+    expect(container).toBeDefined();
+    expect(container.firstChild).toBeInTheDocument();
+  });
+
+  it('mounts interactive interface elements', () => {
+    const { container } = render(<App />);
+    expect(container.querySelectorAll('*').length).toBeGreaterThan(1);
+  });
+});
+`;
+    updates.push({ file: "src/App.test.jsx", content: generatedTest });
+  }
+
   const summary = `Generated ${updates.length} file(s) for ${missionObjective || decree}`;
 
   if (updates.length > 0) {

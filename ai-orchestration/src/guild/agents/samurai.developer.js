@@ -1,5 +1,5 @@
 import { invokeGuildLLM } from "../model.js";
-import { listFiles, readFiles, updateFiles } from "../tools/workspace.js";
+import { listFiles, readFiles, updateFiles, deleteFiles } from "../tools/workspace.js";
 
 /**
  * The Samurai Forge: Implementation & Adaptive Repair Agent
@@ -57,6 +57,11 @@ When generating unit tests in .test.jsx files:
    import { act } from 'react';
 4. If testing elements by data-testid (e.g. screen.getByTestId('snake-segment')), ENSURE the JSX components assign that EXACT attribute: data-testid="snake-segment".
 5. Use standard queries: screen.getByText, screen.getByTestId, screen.getByRole. Do not invent non-existent methods like screen.getAllByClassName.
+
+FILE REMOVAL:
+If the user's decree or acceptance criteria asks to delete or replace old files:
+### DELETE: src/components/OldComponent.jsx
+### DELETE: src/components/OldComponent.test.jsx
 
 Output the code using file blocks:
 ### FILE: src/App.jsx
@@ -168,6 +173,43 @@ describe('${safeTitle} Component Suite', () => {
   }
 
   const summary = `Generated ${updates.length} file(s) for ${missionObjective || decree}`;
+
+  // Extract file deletions
+  const deletions = [];
+  const deleteBlockRegex = /(?:###|##|\*\*)\s*(?:DELETE|Delete):\s*([^\r\n]+)/gi;
+  let delMatch;
+  while ((delMatch = deleteBlockRegex.exec(responseText)) !== null) {
+    const filename = delMatch[1].trim().replace(/^[`*]+|[`*]+$/g, "");
+    if (filename) deletions.push(filename);
+  }
+
+  // Also extract files explicitly marked for deletion in acceptanceCriteria
+  if (Array.isArray(acceptanceCriteria)) {
+    for (const ac of acceptanceCriteria) {
+      const desc = ac.description || "";
+      if (desc.toLowerCase().includes("delete") || desc.toLowerCase().includes("remove")) {
+        const parenMatch = desc.match(/\(([^)]+)\)/);
+        if (parenMatch) {
+          const names = parenMatch[1].split(/[\s,]+/);
+          for (const rawName of names) {
+            const clean = rawName.trim().replace(/^[`*]+|[`*]+$/g, "");
+            if (clean.includes(".")) {
+              const found = fileList.filter(f => f.endsWith(clean) || f.endsWith("/" + clean));
+              found.forEach(f => {
+                if (!deletions.includes(f)) deletions.push(f);
+              });
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (deletions.length > 0) {
+    writer?.(`🗑️ [The Samurai Forge] Deleting ${deletions.length} obsolete file(s): ${deletions.join(", ")}...\n`);
+    await deleteFiles(deletions, workspaceDir);
+    writer?.("✅ [The Samurai Forge] Obsolete files deleted successfully.\n");
+  }
 
   if (updates.length > 0) {
     writer?.(`✏️ [The Samurai Forge] Writing ${updates.length} file(s) directly to local workspace: ${updates.map(u => u.file).join(", ")}...\n`);

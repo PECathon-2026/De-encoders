@@ -91,6 +91,12 @@ export async function sentinelTestingNode(state) {
     if (testFailureOutput.includes("Unable to find an element by: [data-testid=")) {
       hint += " Ensure that the component JSX elements include the exact data-testid attributes expected by the test.";
     }
+    if (testFailureOutput.includes("Expected element to have text content") || testFailureOutput.includes("- Expected")) {
+      hint += " React state is asynchronous: compute next turn/value into a variable (e.g. const nextPlayer = !xIsNext ? 'X' : 'O') before setting status text.";
+    }
+    if (testFailureOutput.includes("Unable to find an element by: [data-testid=\"reset-button\"]")) {
+      hint += " If reset-button is conditional on game over, tests must trigger game over first, or render reset-button unconditionally.";
+    }
 
     writer?.(`⚠️ [The Sentinel Dojo] Verification failed! Formulating diagnostic dispatch back to Samurai Forge (Loop #${iterationCount + 1})...\n`);
     return {

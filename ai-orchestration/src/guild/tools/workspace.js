@@ -87,6 +87,35 @@ export async function updateFiles(updates = [], workspaceDir = DEFAULT_WORKSPACE
 }
 
 /**
+ * Safely deletes specified files from the target workspace
+ */
+export async function deleteFiles(filePaths = [], workspaceDir = DEFAULT_WORKSPACE) {
+  const results = [];
+  const normalizedBase = path.resolve(workspaceDir);
+
+  for (const rel of filePaths) {
+    const full = path.resolve(workspaceDir, rel);
+    // Security check: ensure path is inside workspace
+    if (!full.startsWith(normalizedBase)) {
+      results.push({ [rel]: 'Error: Path outside workspace boundary' });
+      continue;
+    }
+
+    try {
+      if (fs.existsSync(full)) {
+        await fs.promises.unlink(full);
+        results.push({ [rel]: 'Deleted successfully' });
+      } else {
+        results.push({ [rel]: 'File does not exist' });
+      }
+    } catch (e) {
+      results.push({ [rel]: `Error deleting file: ${e.message}` });
+    }
+  }
+  return results;
+}
+
+/**
  * Fast grep search across workspace files
  */
 export async function searchFiles(query, workspaceDir = DEFAULT_WORKSPACE) {

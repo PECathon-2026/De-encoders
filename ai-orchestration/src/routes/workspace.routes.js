@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { listFiles, readFiles, updateFiles, searchFiles, runCommand, getGitDiff } from "../guild/tools/workspace.js";
+import { listFiles, readFiles, updateFiles, deleteFiles, searchFiles, runCommand, getGitDiff } from "../guild/tools/workspace.js";
 
 const workspaceRouter = Router();
 
@@ -68,6 +68,22 @@ workspaceRouter.get("/git-diff", async (req, res) => {
   res.status(200).json(diff);
 });
 
+/**
+ * @route DELETE /delete-files
+ * @description Deletes files directly from workspace
+ */
+workspaceRouter.delete("/delete-files", async (req, res) => {
+  const fileList = req.body.files;
+  if (!Array.isArray(fileList)) return res.status(400).json({ error: "files must be an array" });
+
+  try {
+    const results = await deleteFiles(fileList);
+    res.status(200).json({ results });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // --------------------------------------------------------------------
 // Compatibility Routes for Sandbox Lifecycle (Zero-404 Guarantee)
 // --------------------------------------------------------------------
@@ -80,11 +96,57 @@ workspaceRouter.get("/api/sandbox/project", (req, res) => {
   });
 });
 
-workspaceRouter.post("/api/sandbox/project", (req, res) => {
+workspaceRouter.post("/api/sandbox/project", async (req, res) => {
+  const projectTitle = req.body.title || "New Project";
+  try {
+    // List existing components and remove them so new project starts with a clean slate
+    const existing = await listFiles();
+    const obsoleteComponents = existing.filter(f => f.startsWith("src/components/"));
+    if (obsoleteComponents.length > 0) {
+      await deleteFiles(obsoleteComponents);
+    }
+
+    // Reset App.jsx to a clean starter state
+    await updateFiles([
+      {
+        file: "src/App.jsx",
+        content: `import React from 'react';
+import './App.css';
+
+export default function App() {
+  return (
+    <div className="game-container" style={{ padding: '2rem', textAlign: 'center' }}>
+      <h1>${projectTitle}</h1>
+      <p>Issue a decree to start forging your application!</p>
+    </div>
+  );
+}
+`
+      },
+      {
+        file: "src/App.test.jsx",
+        content: `import React from 'react';
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
+import App from './App';
+
+describe('${projectTitle}', () => {
+  it('renders application title', () => {
+    render(<App />);
+    expect(screen.getByText(/${projectTitle}/i)).toBeInTheDocument();
+  });
+});
+`
+      }
+    ]);
+  } catch (err) {
+    console.error("Error resetting workspace for new project:", err);
+  }
+
   res.status(200).json({
     project: {
       _id: "local-workspace",
-      title: req.body.title || "Local DevPilot Workspace"
+      title: projectTitle
     }
   });
 });

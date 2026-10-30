@@ -1,28 +1,19 @@
-import React, { useState } from 'react';
+import React from 'react';
 import './Counter.css';
 
-const Counter = () => {
-  const [count, setCount] = useState(0);
-
-  const increment = () => setCount(count + 1);
-  const decrement = () => setCount(count - 1);
-  const reset = () => setCount(0);
-
+const Counter = ({ score, gameOver, resetGame }) => {
   return (
-    <div className="counter-container">
-      <h2 className="counter-title">Counter</h2>
-      <div className="counter-display">{count}</div>
-      <div className="counter-buttons">
-        <button className="counter-btn decrement-btn" onClick={decrement}>
-          -
+    <div className="counter">
+      <span data-testid="score-display">Score: {score}</span>
+      {gameOver && (
+        <button
+          className="reset-button"
+          onClick={resetGame}
+          data-testid="reset-button"
+        >
+          Play Again
         </button>
-        <button className="counter-btn reset-btn" onClick={reset}>
-          Reset
-        </button>
-        <button className="counter-btn increment-btn" onClick={increment}>
-          +
-        </button>
-      </div>
+      )}
     </div>
   );
 };

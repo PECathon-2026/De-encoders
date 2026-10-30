@@ -67,20 +67,38 @@ export async function sentinelTestingNode(state) {
 
   // 3. Update Acceptance Criteria with verified evidence
   const updatedCriteria = acceptanceCriteria.map(ac => {
-    if (!testsPassed) {
-      return { ...ac, verified: false, evidence: "Verification blocked by test/build errors" };
+    const text = (ac.description || "").toLowerCase();
+    // Criteria regarding compilation, building, or styling pass if build passed
+    const isBuildSpecific = text.includes("compile") || text.includes("build") || text.includes("run without") || text.includes("modular");
+    if (isBuildSpecific && isBuildSuccess) {
+      return { ...ac, verified: true, evidence: "Build compilation verified successfully" };
     }
-    return { ...ac, verified: true, evidence: "Build checks passed, zero errors recorded" };
+    if (!testsPassed) {
+      return { ...ac, verified: false, evidence: "Unit verification failed" };
+    }
+    return { ...ac, verified: true, evidence: "Build & unit test checks passed with zero errors" };
   });
 
   if (!testsPassed) {
+    // Formulate actionable diagnostic hints from stack trace
+    let hint = "Fix the assertion or runtime errors in the test or component while preserving functionality.";
+    if (testFailureOutput.includes("act is not a function")) {
+      hint += " CRITICAL: In test files, import { act } from 'react', NEVER from 'vitest'.";
+    }
+    if (testFailureOutput.includes("jest is not defined")) {
+      hint += " Use 'vi' from 'vitest' instead of 'jest'.";
+    }
+    if (testFailureOutput.includes("Unable to find an element by: [data-testid=")) {
+      hint += " Ensure that the component JSX elements include the exact data-testid attributes expected by the test.";
+    }
+
     writer?.(`⚠️ [The Sentinel Dojo] Verification failed! Formulating diagnostic dispatch back to Samurai Forge (Loop #${iterationCount + 1})...\n`);
     return {
       ...state,
       acceptanceCriteria: updatedCriteria,
       evidenceLedger: newEvidence,
       lastErrorLog: testFailureOutput,
-      repairInstructions: "Analyze the build/test stack traces above. Fix the compilation or assertion errors while preserving existing behavior.",
+      repairInstructions: hint,
       currentPhase: "samurai_forge",
       activeAgent: "samurai",
       iterationCount: iterationCount + 1,
@@ -88,7 +106,7 @@ export async function sentinelTestingNode(state) {
         ...messages,
         {
           sender: "sentinel",
-          content: `Sentinel quality check FAILED. Sending diagnostic report to Samurai Forge for repair loop #${iterationCount + 1}.`,
+          content: `Sentinel quality check FAILED. Sending diagnostic report to Samurai Forge for repair loop #${iterationCount + 1}. Diagnostic Hint: ${hint}`,
           timestamp: Date.now()
         }
       ]

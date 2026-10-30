@@ -1,63 +1,27 @@
-.counter-container {
-  text-align: center;
-  background-color: var(--grid-color);
-  border: 2px solid var(--border-color);
-  border-radius: 10px;
-  padding: 2rem;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-  margin: 1rem auto;
-  max-width: 300px;
-}
-
-.counter-title {
-  font-size: 1.8rem;
-  margin-bottom: 1rem;
-  color: var(--snake-color);
-  text-shadow: 0 0 5px rgba(74, 173, 128, 0.5);
-}
-
-.counter-display {
-  font-size: 3rem;
-  margin: 1rem 0;
-  color: var(--snake-color);
-  font-weight: bold;
-}
-
-.counter-buttons {
+.counter {
+  margin-top: 1rem;
   display: flex;
-  justify-content: center;
-  gap: 1rem;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }
 
-.counter-btn {
-  background-color: var(--snake-color);
-  color: var(--bg-color);
-  border: none;
-  padding: 0.8rem 1.5rem;
+.counter span {
   font-size: 1.2rem;
-  border-radius: 5px;
+  color: #38bdf8;
+}
+
+.reset-button {
+  background: #38bdf8;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s;
-  font-family: 'Press Start 2P', cursive;
+  font-weight: 600;
+  transition: background 0.2s;
 }
 
-.counter-btn:hover {
-  background-color: #34d399;
-  transform: scale(1.05);
-}
-
-.decrement-btn {
-  background-color: var(--game-over-color);
-}
-
-.decrement-btn:hover {
-  background-color: #ef4444;
-}
-
-.reset-btn {
-  background-color: var(--food-color);
-}
-
-.reset-btn:hover {
-  background-color: #f59e0b;
+.reset-button:hover {
+  background: #2563eb;
 }

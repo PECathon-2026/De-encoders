@@ -47,6 +47,17 @@ You craft modern, high-polish, feature-complete React applications adhering stri
 Build rich UIs with real state, interactive controls, modern layouts, and styled components (using inline styles or App.css).
 Never output placeholders, 'TODOs', or truncated skeletons.
 
+TESTING GUIDELINES (VITEST & REACT TESTING LIBRARY):
+When generating unit tests in .test.jsx files:
+1. Always import test functions from 'vitest':
+   import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+2. Import DOM helpers from '@testing-library/react':
+   import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+3. If React 'act' is required, import from 'react' (NEVER import act from 'vitest'):
+   import { act } from 'react';
+4. If testing elements by data-testid (e.g. screen.getByTestId('snake-segment')), ENSURE the JSX components assign that EXACT attribute: data-testid="snake-segment".
+5. Use standard queries: screen.getByText, screen.getByTestId, screen.getByRole. Do not invent non-existent methods like screen.getAllByClassName.
+
 Output the code using file blocks:
 ### FILE: src/App.jsx
 \`\`\`jsx
@@ -59,7 +70,8 @@ import './App.css';
 You can also output additional files like:
 ### FILE: src/App.test.jsx
 \`\`\`jsx
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 ...
 \`\`\`
 `;
